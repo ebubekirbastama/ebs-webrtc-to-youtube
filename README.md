@@ -4,70 +4,66 @@
 ![WebRTC](https://img.shields.io/badge/WebRTC-aiortc-333333?style=for-the-badge)
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-Pipeline-007808?style=for-the-badge&logo=ffmpeg&logoColor=white)
 ![YouTube Live](https://img.shields.io/badge/YouTube-Live%20RTMP-FF0000?style=for-the-badge&logo=youtube&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)
 
 > EBS Live üzerinden gelen WebRTC video/ses akışını Python + `aiortc` ile alan, FFmpeg üzerinden işleyip YouTube Live RTMP'ye aktaran headless yayın köprüsü.
 
 ## 📌 Proje Hakkında
 
-**EBS WebRTC to YouTube**, EBS Live yayınını WebRTC üzerinden alıp YouTube Live'a RTMP olarak aktarmak için hazırlanmıştır.
+**EBS WebRTC to YouTube**, tarayıcı tabanlı EBS Live yayınını YouTube Live'a aktarmak için hazırlanmış bir WebRTC → FFmpeg → RTMP bridge uygulamasıdır.
 
-Uygulama tarayıcı otomasyonu yerine Python tarafında gerçek bir `RTCPeerConnection` oluşturur. SDP offer/answer verilerini Base64 + JSON formatında işler, WebRTC video/ses track'lerini alır ve medya akışını FFmpeg üzerinden YouTube RTMP endpoint'ine gönderir.
+Uygulama Python tarafında `aiortc` ile `RTCPeerConnection` oluşturur, Base64 + JSON biçimindeki SDP offer/answer verilerini işler ve WebRTC üzerinden gelen video/ses track'lerini alır. Medya FFmpeg pipeline'ına aktarılır ve YouTube Live RTMP endpoint'ine gönderilir.
 
 ## 🧰 Teknoloji Kartları
 
 | Teknoloji | Rol |
 |---|---|
-| 🐍 **Python 3.10+** | Uygulama ve kontrol katmanı |
-| 📡 **aiortc** | WebRTC bağlantısı ve medya track yönetimi |
+| 🐍 **Python 3.10+** | Uygulama ve WebRTC kontrol katmanı |
+| 📡 **aiortc** | WebRTC peer connection ve medya track yönetimi |
 | 🎞️ **PyAV / av** | Medya işleme altyapısı |
-| ⚙️ **FFmpeg** | MPEG-TS, encoding ve RTMP çıkışı |
+| ⚙️ **FFmpeg** | Medya işleme, encoding ve RTMP çıkışı |
 | ▶️ **YouTube Live** | RTMP yayın hedefi |
-| 🔐 **python-dotenv** | `.env` tabanlı yapılandırma |
-| 🌐 **STUN / ICE** | WebRTC bağlantı adaylarının keşfi |
+| 🔐 **python-dotenv** | Ortam değişkenleri ve yayın yapılandırması |
+| 🌐 **STUN / ICE** | WebRTC bağlantı kurulumu |
 
 ## ✨ Özellikler
 
 - 📡 EBS Live WebRTC yayınını alma
-- 🤝 Base64 + JSON SDP offer/answer işleme
-- 🌐 STUN/ICE desteği
+- 🤝 SDP offer/answer kodlarını Base64 + JSON olarak işleme
+- 🌐 STUN / ICE bağlantı desteği
 - 🎥 Video ve ses track'lerini alma
-- 🔄 `aiortc → MediaRecorder → MPEG-TS → FFmpeg → RTMP` pipeline'ı
-- ⚡ Logo olmadan mümkün olduğunda düşük CPU'lu `-c copy` aktarımı
-- 🖼️ Logo/watermark bindirme
+- 🔄 WebRTC → MPEG-TS → FFmpeg → RTMP pipeline'ı
+- ⚡ Logo yokken mümkün olduğunda düşük CPU'lu aktarım
+- 🖼️ Logo / watermark bindirme
 - 📐 1080p yeniden ölçekleme
-- 🎛️ Logo konumu, genişliği ve opacity ayarı
-- 🎞️ Logo/re-encode modunda H.264 `libx264`
+- 🎛️ Logo konumu, genişliği ve saydamlığını ayarlama
+- 🎞️ Logo kullanımında H.264 `libx264` encoding
 - 📊 Bitrate, maxrate, buffer ve FPS ayarları
-- 🔊 AAC 128 kbps / 44.1 kHz / stereo çıkış
-- 🪟 Windows'ta özel FFmpeg yolu belirleme
-- 🔐 YouTube stream key'i `.env` üzerinden kullanabilme
-- 🧹 WebRTC, recorder ve FFmpeg süreçlerinin kontrollü kapatılması
+- 🔊 AAC ses çıkışı
+- 🪟 Windows FFmpeg yolu desteği
+- 🔐 `.env` üzerinden YouTube RTMP yapılandırması
+- 🧹 Bağlantı kapanırken medya ve FFmpeg kaynaklarını temizleme
 
 ## 🏗️ Mimari
 
 ```text
 ┌───────────────────────┐
-│       EBS Live        │
-│ Browser / Publisher   │
+│      EBS Live         │
+│  WebRTC Publisher     │
 └──────────┬────────────┘
-           │
            │ SDP Offer / Answer
-           │ Base64(JSON)
            ▼
 ┌───────────────────────┐
 │ Python + aiortc       │
 │ RTCPeerConnection     │
 │ STUN / ICE            │
 └──────────┬────────────┘
-           │
            │ Video + Audio
            ▼
 ┌───────────────────────┐
-│ aiortc MediaRecorder  │
-│ MPEG-TS               │
+│ Media / MPEG-TS       │
 └──────────┬────────────┘
-           │ stdin
+           │ stdin pipe
            ▼
 ┌───────────────────────┐
 │        FFmpeg         │
@@ -81,49 +77,15 @@ Uygulama tarayıcı otomasyonu yerine Python tarafında gerçek bir `RTCPeerConn
 └───────────────────────┘
 ```
 
-## 🔁 WebRTC Signaling Akışı
-
-Proje ayrı bir signaling sunucusu çalıştırmaz. EBS Live tarafından oluşturulan davet/offer kodu Python uygulamasına aktarılır.
-
-```text
-EBS Live Publisher
-       │
-       │ Offer Code
-       ▼
-Python
-       │
-       │ Base64 + JSON decode
-       ▼
-aiortc RTCPeerConnection
-       │
-       │ createAnswer + ICE
-       ▼
-Python
-       │
-       │ Answer Code
-       ▼
-EBS Live Publisher
-       │
-       ▼
-WebRTC Media
-       │
-       ▼
-FFmpeg
-       │
-       ▼
-YouTube Live
-```
-
 ## 📦 Gereksinimler
 
-- Python **3.10 veya üzeri**
+- Python 3.10 veya üzeri
 - FFmpeg
-- WebRTC destekli EBS Live yayıncısı
-- YouTube Live RTMP endpoint'i
-- YouTube Live stream key
-- İnternet erişimi
+- EBS Live WebRTC yayıncısı
+- YouTube Live RTMP endpoint'i ve stream key
+- İnternet bağlantısı
 
-`requirements.txt` temel olarak şu paketleri içerir:
+Python bağımlılıkları:
 
 ```text
 aiortc>=1.9.0
@@ -156,13 +118,13 @@ pip install -r requirements.txt
 
 ## ⚙️ FFmpeg
 
-Windows'ta uygulamanın varsayılan FFmpeg yolu:
+Windows ortamında varsayılan FFmpeg yolu:
 
 ```text
 C:\ffmpeg.exe
 ```
 
-Farklı bir FFmpeg executable kullanmak için:
+Farklı bir executable belirtmek için:
 
 ```powershell
 python src/webrtc_to_youtube.py --ffmpeg "C:\ffmpeg\bin\ffmpeg.exe" --rtmp "RTMP_ADRESI"
@@ -174,35 +136,21 @@ python src/webrtc_to_youtube.py --ffmpeg "C:\ffmpeg\bin\ffmpeg.exe" --rtmp "RTMP
 python src/webrtc_to_youtube.py --rtmp "rtmp://a.rtmp.youtube.com/live2/STREAM_KEY"
 ```
 
-Ardından:
+Ardından EBS Live üzerinden yayıncı davet/offer kodunu alın, Python uygulamasına girin ve oluşturulan answer kodunu EBS Live'a geri gönderin.
 
-1. EBS Live yayınını başlatın.
-2. **Yeni İzleyici Davet Et** seçeneğini kullanın.
-3. Oluşturulan offer/davet kodunu Python konsoluna yapıştırın.
-4. Python tarafından oluşturulan answer kodunu kopyalayın.
-5. Answer kodunu EBS Live tarafındaki ilgili alana gönderin.
-6. WebRTC bağlantısının kurulmasını bekleyin.
-7. Medya FFmpeg üzerinden YouTube Live'a aktarılır.
+WebRTC bağlantısı kurulduktan sonra medya FFmpeg pipeline'ına aktarılır ve YouTube Live RTMP endpoint'ine gönderilir.
 
 ## 🖼️ Logo / Watermark
 
-Mevcut asset yapısını koruyarak `assets/logo.png` kullanılabilir.
+Mevcut `assets/logo.png` dosyasını veya kendi görselinizi kullanabilirsiniz:
 
 ```bash
 python src/webrtc_to_youtube.py \
   --rtmp "RTMP_ADRESI" \
-  --logo "assets/logo.png"
-```
-
-Logo seçenekleri:
-
-```text
---logo FILE
---logo-width 200
---logo-opacity 1.0
---logo-position top-left
---logo-margin-x 50
---logo-margin-y 50
+  --logo "assets/logo.png" \
+  --logo-position top-right \
+  --logo-width 180 \
+  --logo-opacity 0.90
 ```
 
 Desteklenen konumlar:
@@ -214,11 +162,9 @@ bottom-left
 bottom-right
 ```
 
-Logo kullanıldığında video filtresi gerektiği için FFmpeg yeniden encode moduna geçer ve `libx264` kullanır.
-
 ## 🎥 Yayın Kalitesi
 
-Logo/re-encode modundaki temel ayarlar:
+Logo/re-encode modunda kullanılabilen temel ayarlar:
 
 | Ayar | Varsayılan |
 |---|---:|
@@ -234,53 +180,29 @@ Logo/re-encode modundaki temel ayarlar:
 | Sample rate | `44100 Hz` |
 | Channels | Stereo |
 
-Örnek:
-
-```bash
-python src/webrtc_to_youtube.py \
-  --rtmp "RTMP_ADRESI" \
-  --resolution 1920x1080 \
-  --fps 30 \
-  --bitrate 5500k \
-  --maxrate 6500k \
-  --bufsize 12000k
-```
-
 ## ⚡ Copy Modu ve Re-Encode
 
-### Logo yoksa
+Logo kullanılmadığında mümkün olan durumlarda medya yeniden encode edilmeden aktarılabilir.
 
-Mümkün olduğunda:
-
-```text
--c copy
-```
-
-kullanılarak yeniden encode gerektirmeyen düşük CPU'lu aktarım yapılabilir.
-
-### Logo veya filtre varsa
-
-Video üzerinde işlem yapılması gerektiği için:
+Logo veya başka video filtresi kullanıldığında yeniden encoding gerekir:
 
 ```text
 libx264 + AAC
 ```
 
-ile yeniden kodlama kullanılır.
-
-YouTube/codec uyumluluğu için yeniden kodlamayı zorlamak isterseniz:
+Codec uyumluluğunu zorlamak için:
 
 ```bash
 --reencode
 ```
 
-kullanabilirsiniz.
+kullanılabilir.
 
 ## 🔐 Stream Key Güvenliği
 
 YouTube stream key'i parola gibi korunmalıdır.
 
-`.env` örneği:
+Önerilen yöntem `.env` kullanmaktır:
 
 ```env
 YOUTUBE_RTMP=rtmp://a.rtmp.youtube.com/live2/STREAM_KEY
@@ -292,12 +214,12 @@ Ardından:
 python src/webrtc_to_youtube.py
 ```
 
-### Güvenlik kuralları
+### Dikkat
 
 - Stream key'i kaynak koda yazmayın.
 - `.env` dosyasını Git'e göndermeyin.
-- Stream key'i README, issue veya ekran görüntülerinde paylaşmayın.
-- Sızmış bir key'i YouTube üzerinden yenileyin.
+- Stream key'i herkese açık şekilde paylaşmayın.
+- Sızan bir key'i YouTube üzerinden yenileyin.
 
 ## 📁 Proje Yapısı
 
@@ -321,69 +243,56 @@ ebs-webrtc-to-youtube/
 
 ### FFmpeg bulunamıyor
 
-FFmpeg yolunu açıkça belirtin:
-
-```bash
---ffmpeg "C:\ffmpeg\bin\ffmpeg.exe"
-```
+FFmpeg yolunu kontrol edin veya `--ffmpeg` ile tam yolu belirtin.
 
 ### WebRTC bağlantısı kurulmuyor
 
 - Offer kodunun tamamını kopyalayın.
-- Answer kodunu değiştirmeden geri gönderin.
-- STUN erişimini kontrol edin.
-- NAT/firewall kısıtlamalarını kontrol edin.
-- WebRTC bağlantı durumunu konsoldan takip edin.
+- Answer kodunu değiştirmeden EBS Live'a gönderin.
+- STUN/ICE bağlantısını kontrol edin.
+- NAT ve firewall kısıtlamalarını kontrol edin.
+- Konsoldaki WebRTC bağlantı durumunu inceleyin.
 
-### YouTube codec/format problemi
+### YouTube yayın başlamıyor
 
-Şunu deneyin:
-
-```bash
---reencode
-```
-
-Bu mod H.264/AAC çıkışını zorlar.
+- RTMP adresini kontrol edin.
+- Stream key'in geçerli olduğundan emin olun.
+- YouTube Live yayınının hazır olduğunu kontrol edin.
+- Gerekirse `--reencode` ile deneyin.
 
 ### Logo görünmüyor
 
-- Dosya yolunu kontrol edin.
-- `assets/logo.png` dosyasının mevcut olduğundan emin olun.
-- `--logo-position` değerini kontrol edin.
-- Logo genişliği ve opacity değerlerini kontrol edin.
+- Logo yolunun doğru olduğunu kontrol edin.
+- Dosyanın gerçekten mevcut olduğundan emin olun.
+- Logo genişliği, opacity ve konum parametrelerini kontrol edin.
 
 ## ⚠️ Teknik Sınırlamalar
 
-Bu proje **headless yayın köprüsü / araştırma projesi** niteliğindedir.
+Bu proje tam teşekküllü bir yayın yönetim platformu değildir. Temel amacı WebRTC medya akışını alıp YouTube Live RTMP'ye aktarmaktır.
 
-- Signaling işlemi otomatik bir merkezi sunucu üzerinden yapılmaz.
-- WebRTC bağlantısı EBS Live'ın kullandığı offer/answer akışına bağlıdır.
-- FFmpeg sistem üzerinde ayrıca bulunmalıdır.
-- Logo/re-encode modu CPU kullanımını artırır.
-- Ağ/NAT/firewall koşulları WebRTC bağlantısını etkileyebilir.
-- YouTube yayın kotası, codec gereksinimleri ve RTMP erişimi YouTube tarafındaki koşullara bağlıdır.
+Üretim ortamında aşağıdaki geliştirmeler değerlendirilebilir:
 
-## 🛠️ Geliştirme Yol Haritası
-
-- Otomatik signaling servisi
-- Web tabanlı kontrol paneli
-- Birden fazla yayın desteği
-- Otomatik reconnect
-- Yayın sağlık/bitrate monitörü
-- FFmpeg stderr log paneli
+- Daha gelişmiş reconnect mekanizması
+- WebRTC signaling otomasyonu
+- Çoklu yayın hedefleri
+- Health check ve monitoring
+- FFmpeg restart supervision
+- Yapılandırma dosyası desteği
+- Daha ayrıntılı logging
 - Docker desteği
-- Sistem servisi olarak çalışma
-- YouTube API entegrasyonu
-- Çoklu RTMP çıkışı
+- Web tabanlı yönetim paneli
 
 ## 📄 Lisans
 
-Bu repository'deki `LICENSE` dosyasına bakınız.
+Bu proje **Apache License 2.0** altında lisanslanmıştır.
+
+Lisans metni için repository'deki [`LICENSE`](./LICENSE) dosyasına bakabilirsiniz.
 
 ## 👤 Geliştirici
 
-**Ebubekir Bastama**  
-GitHub: https://github.com/ebubekirbastama
+**Ebubekir Bastama**
+
+[GitHub profili](https://github.com/ebubekirbastama)
 
 ---
 
