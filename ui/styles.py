@@ -25,4 +25,32 @@ QLabel#StatusBad { background:#fde6e6; color:#a12d2d; border:1px solid #e3aaaa; 
 QGroupBox { border:1px solid #c7cdd3; border-radius:10px; margin-top:12px; padding-top:10px; font-weight:700; }
 QGroupBox::title { subcontrol-origin:margin; left:10px; padding:0 5px; }
 QCheckBox { spacing:7px; }
+
+
+
+/* All dialogs, menus and popups must remain light. */
+QDialog, QMessageBox, QInputDialog, QFileDialog {
+    background: #f4f6f8;
+    color: #26313a;
+}
+QMessageBox QLabel, QInputDialog QLabel, QFileDialog QLabel {
+    background: transparent;
+    color: #26313a;
+}
+QMessageBox QPushButton, QDialog QPushButton {
+    color: #26313a;
+    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #ffffff,stop:1 #d9dee3);
+    border: 1px solid #aeb6bf;
+    min-width: 82px;
+}
+QMessageBox QPushButton:hover, QDialog QPushButton:hover { background: #ffffff; border: 2px solid #8f9aa5; }
+QMenu { background:#ffffff; color:#26313a; border:1px solid #b9c0c7; padding:5px; }
+QMenu::item { background:#ffffff; color:#26313a; padding:7px 22px 7px 10px; }
+QMenu::item:selected { background:#e7eef7; color:#1f2933; }
+QToolTip { background:#ffffff; color:#26313a; border:1px solid #aeb6bf; padding:5px; }
+QComboBox QAbstractItemView { background:#ffffff; color:#26313a; selection-background-color:#dbe9f8; selection-color:#26313a; border:1px solid #aeb6bf; }
+QAbstractItemView { background:#ffffff; color:#26313a; alternate-background-color:#f4f6f8; selection-background-color:#dbe9f8; selection-color:#26313a; }
+QScrollBar:vertical, QScrollBar:horizontal { background:#eef1f4; border:0; }
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal { background:#b8c0c8; border-radius:5px; min-height:24px; min-width:24px; }
+
 '''
