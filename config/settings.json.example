@@ -1,0 +1,12 @@
+{
+  "ffmpeg_path": "",
+  "resolution": "1920x1080",
+  "fps": 30,
+  "bitrate": "5500k",
+  "maxrate": "6500k",
+  "bufsize": "12000k",
+  "logo_width": 220,
+  "logo_opacity": 0.9,
+  "logo_position": "top-right",
+  "reencode": true
+}
